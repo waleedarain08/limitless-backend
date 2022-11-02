@@ -12,6 +12,7 @@ import {
   HttpStatus,
   UseGuards,
   HttpCode,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
@@ -27,6 +28,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CurrentUser } from '@Guard';
 import { ICurrentUser } from '@Interface';
 import { ApiBody, ApiParam } from '@nestjs/swagger';
+import { PlaylistDto } from './dto/playlist.dto';
 
 @Controller('user')
 @UsePipes(new ValidationPipe())
@@ -45,12 +47,71 @@ export class UserController {
       );
     }
   }
+  
+  @ApiBody({ type: PlaylistDto })
+  @UseGuards(new JwtAuthGuard())
+  @Post('playlist/add')
+  async addPlaylist(@Body() body: PlaylistDto,@Req() request: any){
+    try {
+      return await this.userService.addPlaylist(request.user._id,body.videoId);
+    } catch (err) {
+      throw new HttpException(
+        err?.message,
+        err?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+
+  @ApiBody({ type: PlaylistDto })
+  @UseGuards(new JwtAuthGuard())
+  @Post('playlist/remove')
+  async removePlaylist(@Req() request: any,@Body() body: PlaylistDto){
+    try {
+      return await this.userService.removePlaylist(request.user._id,body.videoId);
+    } catch (err) {
+      throw new HttpException(
+        err?.message,
+        err?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
 
   @UseGuards(new JwtAuthGuard())
   @Get()
   async findAll() {
     try {
       const user = await this.userService.findAll();
+      if (!user) throw new HttpException('No user exist', HttpStatus.NOT_FOUND);
+      return user;
+    } catch (err) {
+      throw new HttpException(
+        err?.message,
+        err?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(new JwtAuthGuard())
+  @Get("playlist/")
+  async findAllPlaylist(@Req() request: any) {
+    try {
+      const user = await this.userService.findAllPlaylist(request.user._id);
+      if (!user) throw new HttpException('No user exist', HttpStatus.NOT_FOUND);
+      return user;
+    } catch (err) {
+      throw new HttpException(
+        err?.message,
+        err?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @UseGuards(new JwtAuthGuard())
+  @Get("favourite")
+  async findAllFavourite(@Req() request: any) {
+    try {
+      const user = await this.userService.findAllFavourite(request.user._id);
       if (!user) throw new HttpException('No user exist', HttpStatus.NOT_FOUND);
       return user;
     } catch (err) {

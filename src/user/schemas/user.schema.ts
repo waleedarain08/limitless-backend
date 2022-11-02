@@ -16,6 +16,18 @@ export class User {
   })
   email: String;
 
+  @Prop({
+    type: [mongooseSchema.Types.ObjectId],
+    default:[],
+  })
+  playlist: [mongooseSchema.Types.ObjectId];
+
+  @Prop({
+    type: [mongooseSchema.Types.ObjectId],
+    default:[],
+  })
+  favourite: [mongooseSchema.Types.ObjectId];
+
   @Prop({ type: mongooseSchema.Types.String, required: true })
   password: String;
 

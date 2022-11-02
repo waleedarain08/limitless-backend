@@ -1,6 +1,6 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model,Types } from 'mongoose';
 import { MODEL } from '@Model';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -10,10 +10,13 @@ import { IUserModel } from './interfaces';
 import { ForgotPasswordDto, ResetPasswordDto, VerifyOtpDto } from './dto';
 import { MailService } from 'src/mail/mail.service';
 import { FindOneDto } from '@Dto';
+import { contains } from 'class-validator';
+import { StoryDocument } from '@/story/schema';
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(MODEL.USER_MODEL) private userModel: Model<UserDocument>,
+    @InjectModel(MODEL.STORY_MODEL) private storyModel: Model<StoryDocument>,
     private mailService: MailService,
   ) {}
 
@@ -31,6 +34,68 @@ export class UserService {
     return await this.userModel.find({});
   }
 
+  async findAllPlaylist(userId:string): Promise<IUserModel[]> {
+    let users =  await this.userModel.find({_id:userId});
+    if(users.length>0){
+      let playlistArr = [...users[0].playlist]
+    const stories = await this.storyModel
+      .aggregate([
+        //@ts-ignore
+         {$match : {$expr:{$in : ["$_id",playlistArr] }}},
+
+        // {$match:{playlist:{$in:users[0].playlist}}},
+        {
+          $lookup: {
+            from: MODEL.CATEGORY_MODEL,
+            localField: 'category',
+            foreignField: '_id',
+            as: 'category',
+          },
+        },
+        { $unwind: '$category' },
+       
+      ])
+      .allowDiskUse(true);
+
+    if (!stories || !stories.length)
+      throw new NotFoundException('No stories found!');
+
+    return await stories
+    }
+    return []
+  }
+
+    async findAllFavourite(userId:string): Promise<IUserModel[]> {
+    let users =  await this.userModel.find({_id:userId});
+    if(users.length>0){
+      let favouriteArr = [...users[0].favourite]
+    const stories = await this.storyModel
+      .aggregate([
+        //@ts-ignore
+         {$match : {$expr:{$in : ["$_id",favouriteArr] }}},
+
+        // {$match:{playlist:{$in:users[0].playlist}}},
+        {
+          $lookup: {
+            from: MODEL.CATEGORY_MODEL,
+            localField: 'category',
+            foreignField: '_id',
+            as: 'category',
+          },
+        },
+        { $unwind: '$category' },
+       
+      ])
+      .allowDiskUse(true);
+
+    if (!stories || !stories.length)
+      throw new NotFoundException('No stories found!');
+
+    return await stories
+    }
+    return []
+  }
+
   async findOne(findOneDto: FindOneDto): Promise<IUserModel> {
     return await this.userModel.findOne({ _id: findOneDto.id });
   }
@@ -43,6 +108,28 @@ export class UserService {
       { new: true },
     );
   }
+
+  async addPlaylist(userId:string, videoId:string):Promise<any>{
+      let result = await this.userModel.updateOne({_id:userId },{$addToSet:{playlist:new Types.ObjectId(videoId)}});
+      return result
+  }
+
+  async removePlaylist(userId:string, videoId:string):Promise<any>{
+    let result = await this.userModel.updateOne({_id:userId },{$pull:{playlist:new Types.ObjectId(videoId)} });
+    return result
+  }
+
+
+  async addFavourite(userId:string, videoId:string):Promise<any>{
+      let result = await this.userModel.updateOne({_id:userId },{$addToSet:{favourite:new Types.ObjectId(videoId)}});
+      return result
+  }
+
+  async removeFavourite(userId:string, videoId:string):Promise<any>{
+    let result = await this.userModel.updateOne({_id:userId },{$pull:{favourite:new Types.ObjectId(videoId)} });
+    return result
+  }
+
 
   async forgotPassword(
     forgotPasswordDto: ForgotPasswordDto,

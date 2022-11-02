@@ -12,6 +12,7 @@ import { StoryService } from './story.service';
         name: MODEL.STORY_MODEL,
         schema: StorySchema,
       },
+      
     ]),
   ],
   controllers: [StoryController],
