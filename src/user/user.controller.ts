@@ -77,6 +77,38 @@ export class UserController {
     }
   }
 
+
+
+   
+  @ApiBody({ type: PlaylistDto })
+  @UseGuards(new JwtAuthGuard())
+  @Post('favourite/add')
+  async addFavourite(@Body() body: PlaylistDto,@Req() request: any){
+    try {
+      return await this.userService.addFavourite(request.user._id,body.videoId);
+    } catch (err) {
+      throw new HttpException(
+        err?.message,
+        err?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+
+  @ApiBody({ type: PlaylistDto })
+  @UseGuards(new JwtAuthGuard())
+  @Post('favourite/remove')
+  async removeFavourite(@Req() request: any,@Body() body: PlaylistDto){
+    try {
+      return await this.userService.removeFavourite(request.user._id,body.videoId);
+    } catch (err) {
+      throw new HttpException(
+        err?.message,
+        err?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   @UseGuards(new JwtAuthGuard())
   @Get()
   async findAll() {

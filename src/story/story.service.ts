@@ -21,7 +21,7 @@ export class StoryService {
     return await story.save();
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<IPaginatedResult> {
+  async findAll(userId:string,paginationDto: PaginationDto): Promise<IPaginatedResult> {
     const { search, perPage, page } = paginationDto;
 
     const project = {
@@ -29,6 +29,7 @@ export class StoryService {
       description: 1,
       thumbnail: 1,
       url: 1,
+      user:1,
       views: 1,
       createdAt: 1,
       category: 1,
@@ -44,15 +45,26 @@ export class StoryService {
             as: 'category',
           },
         },
+        {$lookup:{
+          from:MODEL.USER_MODEL,
+          let:{userId:userId},
+          as:"user",
+          pipeline:[
+            //@ts-ignore
+        
+            {$match:{$expr:{$eq:["$_id","$$userId"]}}}
+          ]
+        }},
         { $unwind: '$category' },
-        {
-          $facet: {
-            count: [{ $count: 'total' }],
-            data: paginationHelper(search, page - 1, perPage, project, [
-              'title',
-            ]),
-          },
-        },
+        // {$unwind:"$user.playlist"},
+        // {
+        //   $facet: {
+        //     count: [{ $count: 'total' }],
+        //     data: paginationHelper(search, page - 1, perPage, project, [
+        //       'title',
+        //     ]),
+        //   },
+        // },
       ])
       .allowDiskUse(true);
 
@@ -113,6 +125,7 @@ export class StoryService {
     return await this.storyModel.aggregate([
       //@ts-ignore
       {$match:{category:new Types.ObjectId(id)}},
+
       {
         $lookup: {
           from: MODEL.CATEGORY_MODEL,

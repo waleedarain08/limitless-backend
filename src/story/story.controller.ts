@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Query,
+  Req,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -38,12 +39,14 @@ export class StoryController {
     }
   }
 
+  @UseGuards(new JwtAuthGuard())
   @Get()
   async findAll(
-    @Query() paginationDto: PaginationDto,
+    @Req() request: any,@Query() paginationDto: PaginationDto,
   ): Promise<IPaginatedResult> {
     try {
-      const story = await this.storyService.findAll(paginationDto);
+      console.log(request.user._id)
+      const story = await this.storyService.findAll(request.user._id,paginationDto);
       if (!story)
         throw new HttpException('No stories exist', HttpStatus.NOT_FOUND);
       return story;
