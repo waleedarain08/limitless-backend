@@ -93,9 +93,14 @@ export class StoryController {
   async findOne(@Param() findOneDto: FindOneDto): Promise<IStoryModel> {
     try {
       const story = await this.storyService.findOne(findOneDto);
+
       if (!story)
         throw new HttpException('No story exist', HttpStatus.NOT_FOUND);
-      return story;
+      
+      let related = await this.storyService.related(story._id,story.title)
+      //@ts-ignore
+      Object.assign(story,{related})
+      return story
     } catch (err) {
       throw new HttpException(
         err?.message,

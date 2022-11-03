@@ -83,7 +83,15 @@ export class StoryService {
   async findOne(findOneDto: FindOneDto): Promise<IStoryModel> {
     return await this.storyModel
       .findOne({ _id: findOneDto.id })
-      .populate('category');
+      .populate('category').lean();
+  }
+
+    async related(relatedId:string,name:any): Promise<IStoryModel> {
+      var x = name.split(" "),
+    regex = x.map(function (e) { return new RegExp(e, "i"); });
+    return await this.storyModel
+      .find({ _id:{$ne :relatedId},"name": { "$in": regex }  })
+      .populate('category').lean();
   }
 
   async findAllByCategories(): Promise<IStoryCategories[]> {
