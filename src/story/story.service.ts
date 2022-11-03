@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, Mongoose, Types } from 'mongoose';
 import { FindOneDto, PaginationDto } from '@Dto';
 import { paginationHelper, paginationResponse } from '@Helper';
 import { IPaginatedResult } from '@Interface';
@@ -70,6 +70,49 @@ export class StoryService {
 
   async findAllByCategories(): Promise<IStoryCategories[]> {
     return await this.storyModel.aggregate([
+      {
+        $lookup: {
+          from: MODEL.CATEGORY_MODEL,
+          localField: 'category',
+          foreignField: '_id',
+          as: 'categoryData',
+        },
+      },
+      { $unwind: '$categoryData' },
+      {
+        $group: {
+          _id: '$category',
+          categoryData: { $first: '$categoryData' },
+          stories: {
+            $push: {
+              _id: '$_id',
+              title: '$title',
+              description: '$description',
+              thumbnail: '$thumbnail',
+              url: '$url',
+              duration: '$duration',
+              views: '$views',
+              createdAt: '$createdAt',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          categoryData: {
+            name: '$categoryData.name',
+            image: '$categoryData.image',
+          },
+          stories: 1,
+        },
+      },
+    ]);
+  }
+
+  async findAllByCategoriesId(id:string): Promise<IStoryCategories[]> {
+    return await this.storyModel.aggregate([
+      //@ts-ignore
+      {$match:{category:new Types.ObjectId(id)}},
       {
         $lookup: {
           from: MODEL.CATEGORY_MODEL,

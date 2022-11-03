@@ -55,6 +55,36 @@ export class StoryController {
     }
   }
 
+   @Get('categories')
+  async findAllByCategories(): Promise<IStoryCategories[]> {
+    try {
+      const story = await this.storyService.findAllByCategories();
+      if (!story)
+        throw new HttpException('No stories exist', HttpStatus.NOT_FOUND);
+      return story;
+    } catch (err) {
+      throw new HttpException(
+        err?.message,
+        err?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  @Get('categories/:id')
+  async findAllByCategoriesId(@Param('id') id:string): Promise<IStoryCategories[]> {
+    try {
+      const story = await this.storyService.findAllByCategoriesId(id);
+      if (!story)
+        throw new HttpException('No stories exist', HttpStatus.NOT_FOUND);
+      return story;
+    } catch (err) {
+      throw new HttpException(
+        err?.message,
+        err?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
   @ApiParam(FindOneDto)
   @Get(':id')
   async findOne(@Param() findOneDto: FindOneDto): Promise<IStoryModel> {
@@ -70,19 +100,5 @@ export class StoryController {
       );
     }
   }
-
-  @Get('categories')
-  async findAllByCategories(): Promise<IStoryCategories[]> {
-    try {
-      const story = await this.storyService.findAllByCategories();
-      if (!story)
-        throw new HttpException('No stories exist', HttpStatus.NOT_FOUND);
-      return story;
-    } catch (err) {
-      throw new HttpException(
-        err?.message,
-        err?.status || HttpStatus.BAD_REQUEST,
-      );
-    }
-  }
+ 
 }
