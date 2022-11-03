@@ -29,14 +29,15 @@ export class StoryService {
       description: 1,
       thumbnail: 1,
       url: 1,
-      user:1,
+      isPlaylist:1,
+      isFavourite:1,
       views: 1,
       createdAt: 1,
       category: 1,
     };
-
+    //@ts-ignore
     const stories = await this.storyModel
-      .aggregate([
+    .aggregate([
         {
           $lookup: {
             from: MODEL.CATEGORY_MODEL,
@@ -51,20 +52,25 @@ export class StoryService {
           as:"user",
           pipeline:[
             //@ts-ignore
-        
             {$match:{$expr:{$eq:["$_id","$$userId"]}}}
           ]
         }},
         { $unwind: '$category' },
-        // {$unwind:"$user.playlist"},
-        // {
-        //   $facet: {
-        //     count: [{ $count: 'total' }],
-        //     data: paginationHelper(search, page - 1, perPage, project, [
-        //       'title',
-        //     ]),
-        //   },
-        // },
+        //@ts-ignore
+        {$addFields:{user:{$arrayElemAt:["$user",0]}}},
+        //@ts-ignore
+        {$addFields:{isPlaylist:{$in:["$_id","$user.playlist"]}}},
+        //@ts-ignore
+        {$addFields:{isFavourite:{$in:["$_id","$user.favourite"]}}},
+        //@ts-ignore
+        {
+          $facet: {
+            count: [{ $count: 'total' }],
+            data: paginationHelper(search, page - 1, perPage, project, [
+              'title',
+            ]),
+          },
+        },
       ])
       .allowDiskUse(true);
 

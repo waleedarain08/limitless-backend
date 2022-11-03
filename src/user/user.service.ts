@@ -38,7 +38,9 @@ export class UserService {
     let users =  await this.userModel.find({_id:userId});
     if(users.length>0){
       let playlistArr = [...users[0].playlist]
-    const stories = await this.storyModel
+        //@ts-ignore
+        const stories = await this.storyModel
+        //@ts-ignore
       .aggregate([
         //@ts-ignore
          {$match : {$expr:{$in : ["$_id",playlistArr] }}},
@@ -52,8 +54,24 @@ export class UserService {
             as: 'category',
           },
         },
+        {$lookup:{
+          from:MODEL.USER_MODEL,
+          let:{userId:userId},
+          as:"user",
+          pipeline:[
+            //@ts-ignore
+            {$match:{$expr:{$eq:["$_id","$$userId"]}}}
+          ]
+        }},
+        //@ts-ignore
         { $unwind: '$category' },
-       
+        
+         //@ts-ignore
+        {$addFields:{user:{$arrayElemAt:["$user",0]}}},
+        //@ts-ignore
+        {$addFields:{isPlaylist:{$in:["$_id","$user.playlist"]}}},
+        //@ts-ignore
+        {$addFields:{isFavourite:{$in:["$_id","$user.favourite"]}}},
       ])
       .allowDiskUse(true);
 
@@ -69,7 +87,9 @@ export class UserService {
     let users =  await this.userModel.find({_id:userId});
     if(users.length>0){
       let favouriteArr = [...users[0].favourite]
-    const stories = await this.storyModel
+        //@ts-ignore
+        const stories = await this.storyModel
+        //@ts-ignore
       .aggregate([
         //@ts-ignore
          {$match : {$expr:{$in : ["$_id",favouriteArr] }}},
@@ -83,7 +103,23 @@ export class UserService {
             as: 'category',
           },
         },
+        {$lookup:{
+          from:MODEL.USER_MODEL,
+          let:{userId:userId},
+          as:"user",
+          pipeline:[
+            //@ts-ignore
+            {$match:{$expr:{$eq:["$_id","$$userId"]}}}
+          ]
+        }},
         { $unwind: '$category' },
+        //@ts-ignore
+        {$addFields:{user:{$arrayElemAt:["$user",0]}}},
+        //@ts-ignore
+        {$addFields:{isPlaylist:{$in:["$_id","$user.playlist"]}}},
+        //@ts-ignore
+        {$addFields:{isFavourite:{$in:["$_id","$user.favourite"]}}},
+
        
       ])
       .allowDiskUse(true);
