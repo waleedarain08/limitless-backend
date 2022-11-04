@@ -80,6 +80,60 @@ export class StoryService {
     return await paginationResponse(stories[0], paginationDto);
   }
 
+
+
+ async findOneAggreagation(findOneDto: FindOneDto,userId:string): Promise<IStoryModel> {
+
+    const project = {
+      title: 1,
+      description: 1,
+      thumbnail: 1,
+      url: 1,
+      isPlaylist:1,
+      isFavourite:1,
+      views: 1,
+      createdAt: 1,
+      category: 1,
+    };
+    //@ts-ignore
+    const stories = await this.storyModel
+    .aggregate([
+      //@ts-ignore
+      {$match:{_id:new Types.ObjectId(findOneDto.id)}},
+        {
+          $lookup: {
+            from: MODEL.CATEGORY_MODEL,
+            localField: 'category',
+            foreignField: '_id',
+            as: 'category',
+          },
+        },
+        {$lookup:{
+          from:MODEL.USER_MODEL,
+          let:{userId:userId},
+          as:"user",
+          pipeline:[
+            //@ts-ignore
+            {$match:{$expr:{$eq:["$_id","$$userId"]}}}
+          ]
+        }},
+        { $unwind: '$category' },
+        //@ts-ignore
+        {$addFields:{user:{$arrayElemAt:["$user",0]}}},
+        //@ts-ignore
+        {$addFields:{isPlaylist:{$in:["$_id","$user.playlist"]}}},
+        //@ts-ignore
+        {$addFields:{isFavourite:{$in:["$_id","$user.favourite"]}}},
+      
+      ])
+      .allowDiskUse(true);
+
+    if (!stories || !stories.length)
+      throw new NotFoundException('No stories found!');
+
+    return await stories[0];
+  }
+
   async findOne(findOneDto: FindOneDto): Promise<IStoryModel> {
     return await this.storyModel
       .findOne({ _id: findOneDto.id })

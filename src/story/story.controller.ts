@@ -45,7 +45,6 @@ export class StoryController {
     @Req() request: any,@Query() paginationDto: PaginationDto,
   ): Promise<IPaginatedResult> {
     try {
-      console.log(request.user._id)
       const story = await this.storyService.findAll(request.user._id,paginationDto);
       if (!story)
         throw new HttpException('No stories exist', HttpStatus.NOT_FOUND);
@@ -90,9 +89,9 @@ export class StoryController {
 
   @ApiParam(FindOneDto)
   @Get(':id')
-  async findOne(@Param() findOneDto: FindOneDto): Promise<IStoryModel> {
+  async findOne( @Req() request: any,@Param() findOneDto: FindOneDto): Promise<IStoryModel> {
     try {
-      const story = await this.storyService.findOne(findOneDto);
+      const story = await this.storyService.findOneAggreagation(findOneDto,request.user._id);
 
       if (!story)
         throw new HttpException('No story exist', HttpStatus.NOT_FOUND);
